@@ -8,12 +8,14 @@ using Azure.Identity.Broker;
 using Microsoft.Graph.Authentication;
 using Microsoft.Graph.PowerShell.Authentication.Core.Extensions;
 using Microsoft.Identity.Client;
+using Microsoft.Identity.Client.Broker;
 using Microsoft.Identity.Client.Extensions.Msal;
 using System;
 using System.Diagnostics.Tracing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;// Testing Access Token Proof of Possession functionality
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -125,21 +127,29 @@ namespace Microsoft.Graph.PowerShell.Authentication.Core.Utilities
                 var interactiveBrowserCredential = new InteractiveBrowserCredential(interactiveOptions);
                 if (IsWamSupported())
                 {
-                    authRecord = await Task.Run(() =>
+                    //--- Testing Access Token Proof of Possession functionality
+                    var pca = PublicClientApplicationBuilder.Create(interactiveOptions.ClientId)
+                        .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))
+                        .Build();
+                    AuthenticationResult authResult = await pca.AcquireTokenInteractive(authContext.Scopes)
+                        .WithProofOfPossession("nonce", HttpMethod.Get, interactiveOptions.AuthorityHost)
+                        .ExecuteAsync()
+                        .ConfigureAwait(false);
+                    AuthRecord authRecordWAM = new()
                     {
-                        // Run the thread in MTA.
-                        return interactiveBrowserCredential.Authenticate(new TokenRequestContext(authContext.Scopes), cancellationToken);
-                    });
+                        Username = authResult.Account.Username,
+                        Authority = authResult.Account.Environment,
+                        TenantId = authResult.TenantId,
+                        ClientId = authContext.ClientId
+                    };
+                    //--- Testing Access Token Proof of Possession functionality
                 }
                 else
                 {
-                    authRecord = await Task.Run(() =>
-                    {
-                        // Run the thread in MTA.
-                        return interactiveBrowserCredential.AuthenticateAsync(new TokenRequestContext(authContext.Scopes), cancellationToken);
-                    });
+                    authRecord = await interactiveBrowserCredential.AuthenticateAsync(new TokenRequestContext(authContext.Scopes), cancellationToken).ConfigureAwait(false);
+                    await WriteAuthRecordAsync(authRecord).ConfigureAwait(false); //--- Testing Access Token Proof of Possession functionality
                 }
-                await WriteAuthRecordAsync(authRecord).ConfigureAwait(false);
+                //await WriteAuthRecordAsync(authRecord).ConfigureAwait(false);
                 return interactiveBrowserCredential;
             }
 
@@ -445,5 +455,29 @@ namespace Microsoft.Graph.PowerShell.Authentication.Core.Utilities
                 File.Delete(Constants.AuthRecordPath);
             return Task.CompletedTask;
         }
+
+        //--- Testing Access Token Proof of Possession functionality
+        public class AuthRecord : IAuthRecord
+        {
+            public AuthRecord()
+            {
+            }
+            public string Authority { get; set; }
+            public string ClientId { get; set; }
+            public string HomeAccountId { get; set; }
+            public string TenantId { get; set; }
+            public string Username { get; set; }
+            public string Version { get; set; } = "1.0";
+        }
+        public interface IAuthRecord
+        {
+            string Authority { get; set; }
+            string ClientId { get; set; }
+            string HomeAccountId { get; set; }
+            string TenantId { get; set; }
+            string Username { get; set; }
+            string Version { get; set; }
+        }
+        //--- Testing Access Token Proof of Possession functionality
     }
 }
