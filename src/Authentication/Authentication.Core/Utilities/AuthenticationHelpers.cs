@@ -16,6 +16,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;// Testing Access Token Proof of Possession functionality
+using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
@@ -128,13 +129,18 @@ namespace Microsoft.Graph.PowerShell.Authentication.Core.Utilities
                 if (IsWamSupported())
                 {
                     //--- Testing Access Token Proof of Possession functionality
+                    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+                    IntPtr parentWindowHandle = GetForegroundWindow();
                     var pca = PublicClientApplicationBuilder.Create(interactiveOptions.ClientId)
                         .WithBroker(new BrokerOptions(BrokerOptions.OperatingSystems.Windows))
                         .Build();
-                    AuthenticationResult authResult = await pca.AcquireTokenInteractive(authContext.Scopes)
+                    AuthenticationResult authResult = await Task.Run<AuthenticationResult>(() =>
+                    {
+                        return pca.AcquireTokenInteractive(authContext.Scopes)
+                        .WithParentActivityOrWindow(parentWindowHandle)
                         .WithProofOfPossession("nonce", HttpMethod.Get, interactiveOptions.AuthorityHost)
-                        .ExecuteAsync()
-                        .ConfigureAwait(false);
+                        .ExecuteAsync();
+                    });
                     AuthRecord authRecordWAM = new()
                     {
                         Username = authResult.Account.Username,
