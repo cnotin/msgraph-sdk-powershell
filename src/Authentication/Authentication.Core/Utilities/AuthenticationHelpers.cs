@@ -145,8 +145,10 @@ namespace Microsoft.Graph.PowerShell.Authentication.Core.Utilities
                     {
                         Username = authResult.Account.Username,
                         Authority = authResult.Account.Environment,
+                        HomeAccountId = authResult.Account.HomeAccountId,
                         TenantId = authResult.TenantId,
-                        ClientId = authContext.ClientId
+                        ClientId = authContext.ClientId,
+                        AccessToken = authResult.AccessToken
                     };
                     //--- Testing Access Token Proof of Possession functionality
                 }
@@ -470,18 +472,20 @@ namespace Microsoft.Graph.PowerShell.Authentication.Core.Utilities
             }
             public string Authority { get; set; }
             public string ClientId { get; set; }
-            public string HomeAccountId { get; set; }
+            public AccountId HomeAccountId { get; set; }
             public string TenantId { get; set; }
             public string Username { get; set; }
+            public string AccessToken {  get; set; }
             public string Version { get; set; } = "1.0";
         }
         public interface IAuthRecord
         {
             string Authority { get; set; }
             string ClientId { get; set; }
-            string HomeAccountId { get; set; }
+            AccountId HomeAccountId { get; set; }
             string TenantId { get; set; }
             string Username { get; set; }
+            string AccessToken { get; set; }
             string Version { get; set; }
         }
         //--- Testing Access Token Proof of Possession functionality
