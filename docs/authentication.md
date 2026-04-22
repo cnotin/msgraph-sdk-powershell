@@ -132,34 +132,6 @@ Set-MgGraphOption -EnableLoginByWAM $false
 
 **Note: Signin by Web Account Manager (WAM) is enabled by default on Windows and cannot be disabled. Setting this option to $False will have no effect on Windows systems. Except if you use your own app (see below)**
 
-Starting with v2.35.1, to disable WAM on Windows, use `Set-MgGraphOption -DisableLoginByWAM $true` and then connect with a custom `-ClientId` (see [Custom App Registration](#custom-app-registration) below):
-
-```PowerShell
-Set-MgGraphOption -DisableLoginByWAM $true
-Connect-MgGraph -ClientId "<YOUR-APP-CLIENT-ID>" -TenantId "<YOUR-TENANT-ID>" -Scopes "User.Read"
-```
-
-### Custom App Registration
-
-By default, `Connect-MgGraph` uses Microsoft's own built-in app registration, but you can use your own app registration.
-
-#### 1. Register the app in the Entra admin center
-
-1. Go to **Entra admin center** → **App registrations** → **New registration**.
-2. Give it a name (e.g., `MyGraphPowerShellApp`).
-3. Set **Supported account types** to match your needs (e.g., *Single tenant*).
-4. Skip the redirect URI here — you will add it in the next step.
-5. Click **Register**, then copy the **Application (client) ID**.
-
-#### 2. Configure authentication
-
-In the **Authentication** blade of your new app registration:
-
-1. Click **Add Redirect URI** → **Mobile and desktop applications**.
-2. Add the following redirect URIs:
-   - `https://login.microsoftonline.com/common/oauth2/nativeclient`
-   - `ms-appx-web://Microsoft.AAD.BrokerPlugin/<YOUR-APP-CLIENT-ID>` (replace with **your own app's client ID**)
-3. Validate with **Configure**
-4. Open the **Settings** tab
-5. Set **Allow public client flows** to **Enabled**.
-6. Click **Save**.
+Starting with v2.35.1, to disable WAM on Windows, use `Set-MgGraphOption -DisableLoginByWAM $true` and then connect with a custom `-ClientId`.
+To create your custom app, follow the guide to [Use delegated access with a custom application for Microsoft Graph PowerShell](https://learn.microsoft.com/en-us/powershell/microsoftgraph/authentication-commands?view=graph-powershell-1.0#use-delegated-access-with-a-custom-application-for-microsoft-graph-powershell
+). You should also add the redirect URI of `ms-appx-web://Microsoft.AAD.BrokerPlugin/<yourAppId>` to ensure that you can use WAM against that app registration as well.
